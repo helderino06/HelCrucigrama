@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#6d4aff"><title>Crucigrama Diario</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f5f3ee;color:#202124;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{text-align:center;padding:20px 14px 10px}h1{margin:0;font-size:32px}.sub{color:#666;margin:5px auto;max-width:700px}
+.app{max-width:1150px;margin:auto;padding:12px}.top{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}.pill{background:white;border:1px solid #ddd;border-radius:99px;padding:8px 12px;font-weight:700}
+.layout{display:grid;grid-template-columns:minmax(340px,650px) minmax(300px,1fr);gap:16px}.card{background:#fff;border:1px solid #ddd;border-radius:18px;padding:14px;box-shadow:0 5px 20px #0000000d}
+.gridwrap{overflow:auto;display:flex;justify-content:center;padding:8px}.grid{display:grid;gap:2px;background:#111;padding:2px}
+.cell{width:40px;height:40px;background:#fff;position:relative}.black{background:#111}.num{position:absolute;left:3px;top:2px;font-size:9px;font-weight:800}
+input{width:100%;height:100%;border:0;outline:0;background:transparent;text-align:center;font-size:22px;font-weight:800;text-transform:uppercase}.active{background:#ddd3ff}.focus{background:#bbaaff}.correct{background:#d9f5e2}.wrong{background:#ffd9dd}
+h2{font-size:18px;margin:5px 0 8px}.clues{display:grid;gap:16px}.clue{padding:9px;border:1px solid #ddd;border-radius:10px;background:#fafafa;cursor:pointer}.clue.selected{border-color:#6d4aff;background:#f2efff}.clue b{color:#6d4aff;margin-right:5px}
+.buttons{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}button{border:0;border-radius:10px;padding:12px 8px;font-weight:800;background:#ece8ff;color:#30206f}button.primary{background:#6d4aff;color:white}button.yellow{background:#ffcb05;color:#111}button.green{background:#d9f5e2;color:#176b35}button.red{background:#ffe0e4;color:#8d1521}
+.progress{height:8px;background:#eee;border-radius:99px;overflow:hidden;margin:5px 0 12px}.bar{height:100%;width:0;background:#6d4aff}
+#msg{min-height:24px;margin-top:10px;font-weight:800}.win{color:#198754}.warn{color:#a45a00}
+@media(max-width:820px){.layout{grid-template-columns:1fr}.cell{width:34px;height:34px}input{font-size:19px}}
+@media(max-width:430px){.cell{width:30px;height:30px}input{font-size:17px}.buttons{grid-template-columns:1fr 1fr}}
+</style></head>
+<body>
+<header><h1>🧩 Crucigrama Diario</h1><div class="sub">Anime · Pokémon · fútbol · videojuegos · cultura pop</div></header>
+<div class="app"><div class="top"><div class="pill" id="date"></div><div class="pill" id="theme"></div><div class="pill" id="score"></div></div>
+<div class="layout"><section class="card"><b>Progreso</b><div class="progress"><div class="bar" id="bar"></div></div>
+<div class="gridwrap"><div id="grid" class="grid"></div></div><div id="msg"></div>
+<div class="buttons"><button class="primary" onclick="checkGrid()">✓ Corregir cuadrícula</button><button class="yellow" onclick="revealWord()">💡 Revelar palabra</button><button class="green" onclick="checkWord()">✓ Corregir palabra</button><button class="red" onclick="revealGrid()">🔓 Revelar cuadrícula</button><button onclick="clearWord()">↺ Borrar palabra</button><button onclick="extra()">🎲 Partida extra</button></div>
+<p style="font-size:13px;color:#666">Toca una casilla para escribir. En una casilla compartida, tócala de nuevo para cambiar entre horizontal y vertical. La partida se guarda automáticamente.</p>
+</section><aside class="card"><div class="clues"><div><h2>Horizontales</h2><div id="across"></div></div><div><h2>Verticales</h2><div id="down"></div></div></div></aside></div></div>
+<script>
+const BANK=[
+["Pokémon","⚡",[["PIKACHU","Pokémon eléctrico que acompaña a Ash durante buena parte del anime."],["CHARIZARD","Evolución final de Charmander que combina Fuego y Volador."],["MEWTWO","Pokémon legendario creado artificialmente a partir del ADN de Mew."],["EEVEE","Pokémon conocido por tener numerosas evoluciones posibles."],["SINNOH","Región de Pokémon Diamante, Perla y Platino."],["DITTO","Pokémon capaz de transformarse en otros Pokémon."],["LUCARIO","Pokémon de tipo Lucha y Acero asociado al aura."],["POKEDEX","Dispositivo que registra información sobre las especies Pokémon."]]],
+["Anime","🍥",[["NARUTO","Ninja protagonista que sueña con convertirse en Hokage."],["GOKU","Protagonista de Dragon Ball perteneciente a la raza saiyan."],["LUFFY","Capitán de los Sombrero de Paja que busca el One Piece."],["ZORO","Espadachín de One Piece especializado en tres espadas."],["SAITAMA","Héroe calvo capaz de derrotar enemigos de un solo golpe."],["GOJO","Hechicero de Jujutsu Kaisen conocido por el Infinito."],["TANJIRO","Cazador de demonios protagonista de Kimetsu no Yaiba."],["DEKU","Nombre heroico de Izuku Midoriya."]]],
+["Fútbol","⚽",[["MESSI","Futbolista argentino que ganó el Mundial de 2022."],["RONALDO","Delantero portugués conocido por sus récords goleadores."],["BARCELONA","Club catalán cuyo estadio tradicional es el Camp Nou."],["NEYMAR","Atacante brasileño que pasó por Santos, Barcelona y PSG."],["PICHICHI","Trofeo español concedido al máximo goleador de LaLiga."],["PORTERO","Jugador que puede utilizar las manos dentro de su área."],["CHAMPIONS","Competición europea de clubes organizada por la UEFA."],["CANTERA","Sistema de formación de jóvenes jugadores de un club."]]],
+["Videojuegos","🎮",[["MARIO","Fontanero de Nintendo protagonista de una famosa saga."],["ZELDA","Princesa de Hyrule cuyo nombre da título a una saga."],["LINK","Héroe de The Legend of Zelda que empuña la Espada Maestra."],["SONIC","Erizo azul famoso por su enorme velocidad."],["KIRBY","Personaje rosa capaz de absorber enemigos y copiar habilidades."],["SAMUS","Cazarrecompensas protagonista de Metroid."],["BOSS","Enemigo especialmente poderoso al final de una zona."],["NINTENDO","Compañía japonesa detrás de Mario, Zelda y Pokémon."]]]
+];
+let data,words,sol,user,selected=null,dir="across",nums={};
+function seed(){let d=new Date(),s=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();return s}
+function rng(s){return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296}}
+function build(bank){
+ let rand=rng(seed()), chosen=[...bank[2]].sort(()=>rand()-.5), placed=[], cells={};
+ const key=(r,c)=>r+","+c;
+ function can(w,r,c,d){let dr=d==="down",dc=d==="across",R=r,C=c;
+  if(cells[key(R-(dr?1:0),C-(dc?1:0))]||cells[key(R+(dr?w.length:0),C+(dc?w.length:0))])return false;
+  for(let i=0;i<w.length;i++){R=r+(dr?i:0);C=c+(dc?i:0);let e=cells[key(R,C)];if(e&&e.l!==w[i])return false}
+  return true}
+ function put(w,r,c,d){let dr=d==="down",dc=d==="across",ps=[];for(let i=0;i<w.length;i++){let R=r+(dr?i:0),C=c+(dc?i:0),k=key(R,C);if(!cells[k])cells[k]={l:w[i]};cells[k].words??=[];cells[k].words.push(placed.length);ps.push([R,C])}placed.push({w:w,clue:arguments[0].clue||"",r,c,d})}
+ let first=chosen[0];put(Object.assign(first[0],{clue:first[1]}),0,0,"across");
+ for(let x=1;x<chosen.length;x++){let W=chosen[x][0],cl=chosen[x][1],opts=[];
+  for(let o of placed)for(let i=0;i<W.length;i++)for(let j=0;j<o.w.length;j++)if(W[i]===o.w[j]){
+   let d=o.d==="across"?"down":"across",r=o.r+(o.d==="down"?j:0)-(d==="down"?i:0),c=o.c+(o.d==="across"?j:0)-(d==="across"?i:0);
+   if(can(W,r,c,d))opts.push([r,c,d])}
+  if(opts.length){let q=opts[Math.floor(rand()*opts.length)];put(Object.assign(W,{clue:cl}),q[0],q[1],q[2])}
+ }
+ let minR=999,minC=999,maxR=-999,maxC=-999;Object.keys(cells).forEach(k=>{let[a,b]=k.split(",").map(Number);minR=Math.min(minR,a);maxR=Math.max(maxR,a);minC=Math.min(minC,b);maxC=Math.max(maxC,b)});
+ let rows=maxR-minR+1,cols=maxC-minC+1,g=Array.from({length:rows},()=>Array(cols).fill(null));
+ Object.keys(cells).forEach(k=>{let[a,b]=k.split(",").map(Number);g[a-minR][b-minC]=cells[k].l});
+ placed.forEach(o=>{o.r-=minR;o.c-=minC});return {g,placed,rows,cols}
+}
+function init(extra=false){let b=BANK[extra?Math.floor(Math.random()*BANK.length):seed()%BANK.length];let z=build(b);data=b;words=z.placed;sol=z.g;user=JSON.parse(localStorage.getItem("cd-"+new Date().toISOString().slice(0,10)))||sol.map(r=>r.map(x=>x?"":""));assign();render()}
+function assign(){nums={};let n=1;for(let r=0;r<sol.length;r++)for(let c=0;c<sol[0].length;c++)if(sol[r][c]){if((c===0||!sol[r][c-1])||(r===0||!sol[r-1][c]))nums[r+","+c]=n++}words.forEach(w=>w.n=nums[w.r+","+w.c]||0)}
+function save(){localStorage.setItem("cd-"+new Date().toISOString().slice(0,10),JSON.stringify(user))}
+function render(){document.getElementById("date").textContent="📅 "+new Date().toLocaleDateString("es-ES",{day:"numeric",month:"long"});document.getElementById("theme").textContent=data[1]+" "+data[0];
+let g=document.getElementById("grid");g.style.gridTemplateColumns=`repeat(${sol[0].length},var(--cell,40px))`;g.innerHTML="";
+for(let r=0;r<sol.length;r++)for(let c=0;c<sol[0].length;c++){let x=document.createElement("div");x.className="cell";if(!sol[r][c]){x.classList.add("black");g.append(x);continue}if(nums[r+","+c]){let q=document.createElement("span");q.className="num";q.textContent=nums[r+","+c];x.append(q)}let i=document.createElement("input");i.value=user[r][c];i.dataset.r=r;i.dataset.c=c;i.maxLength=1;i.onclick=()=>{if(selected&&selected.r==r&&selected.c==c)dir=dir==="across"?"down":"across";select(r,c)};i.onfocus=()=>select(r,c);i.oninput=()=>{i.value=i.value.toUpperCase().replace(/[^A-ZÑ]/g,"");user[r][c]=i.value;save();progress();if(i.value)move(1)};x.append(i);g.append(x)}
+["across","down"].forEach(d=>{let box=document.getElementById(d);box.innerHTML="";words.filter(w=>w.d===d).sort((a,b)=>a.n-b.n).forEach(w=>{let e=document.createElement("div");e.className="clue";e.innerHTML="<b>"+w.n+".</b>"+w.clue+" <small>("+w.w.length+")</small>";e.onclick=()=>{dir=d;selected={r:w.r,c:w.c};focus(w.r,w.c)};box.append(e)})});progress()}
+function select(r,c){selected={r,c};highlight()}
+function focus(r,c){let i=document.querySelector(`input[data-r="${r}"][data-c="${c}"]`);i?.focus();highlight()}
+function current(){return words.find(w=>w.d===dir&&cells(w).some(p=>p[0]==selected?.r&&p[1]==selected?.c))||words[0]}
+function cells(w){return [...Array(w.w.length)].map((_,i)=>[w.r+(w.d==="down"?i:0),w.c+(w.d==="across"?i:0)])}
+function highlight(){document.querySelectorAll(".cell").forEach(x=>x.classList.remove("active","focus"));if(!selected)return;let w=current();cells(w).forEach(([r,c])=>document.querySelector(`input[data-r="${r}"][data-c="${c}"]`)?.parentElement.classList.add("active"));document.querySelector(`input[data-r="${selected.r}"][data-c="${selected.c}"]`)?.parentElement.classList.add("focus")}
+function move(step){let w=current(),cs=cells(w),i=cs.findIndex(p=>p[0]==selected.r&&p[1]==selected.c);i+=step;if(i>=0&&i<cs.length){selected={r:cs[i][0],c:cs[i][1]};focus(selected.r,selected.c)}}
+function progress(){let t=0,f=0;sol.forEach((r,a)=>r.forEach((x,c)=>{if(x){t++;if(user[a][c])f++}}));document.getElementById("score").textContent=f+" / "+t;document.getElementById("bar").style.width=(f/t*100)+"%"}
+function checkWord(){let w=current(),ok=true;cells(w).forEach(([r,c])=>{let e=document.querySelector(`input[data-r="${r}"][data-c="${c}"]`).parentElement;e.classList.remove("wrong","correct");if(user[r][c]&&user[r][c]!==sol[r][c]){ok=false;e.classList.add("wrong")}else if(user[r][c])e.classList.add("correct")});msg(ok?"✓ La palabra no tiene errores.":"✗ Hay alguna letra incorrecta.","warn")}
+function checkGrid(){let bad=0,empty=0;sol.forEach((r,a)=>r.forEach((x,c)=>{if(x){let e=document.querySelector(`input[data-r="${a}"][data-c="${c}"]`).parentElement;e.classList.remove("wrong","correct");if(!user[a][c])empty++;else if(user[a][c]!==x){bad++;e.classList.add("wrong")}else e.classList.add("correct")}}));msg(bad||empty?`Revisión: ${bad} incorrectas y ${empty} vacías.`:"🎉 ¡Crucigrama completado!","win")}
+function revealWord(){let w=current();cells(w).forEach(([r,c])=>user[r][c]=sol[r][c]);save();render();msg("💡 Palabra revelada.","warn")}
+function revealGrid(){sol.forEach((r,a)=>r.forEach((x,c)=>{if(x)user[a][c]=x}));save();render();msg("🔓 Cuadrícula revelada.","warn")}
+function clearWord(){let w=current();cells(w).forEach(([r,c])=>user[r][c]="");save();render();selected={r:w.r,c:w.c};focus(w.r,w.c)}
+function msg(t,c){let e=document.getElementById("msg");e.textContent=t;e.className=c||""}function extra(){init(true);msg("🎲 Partida extra.","warn")}
+init();
+</script></body></html>
