@@ -1,78 +1,721 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#6d4aff"><title>Crucigrama Diario</title>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#5b4bdb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Crucigrama Diario</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f5f3ee;color:#202124;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-header{text-align:center;padding:20px 14px 10px}h1{margin:0;font-size:32px}.sub{color:#666;margin:5px auto;max-width:700px}
-.app{max-width:1150px;margin:auto;padding:12px}.top{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}.pill{background:white;border:1px solid #ddd;border-radius:99px;padding:8px 12px;font-weight:700}
-.layout{display:grid;grid-template-columns:minmax(340px,650px) minmax(300px,1fr);gap:16px}.card{background:#fff;border:1px solid #ddd;border-radius:18px;padding:14px;box-shadow:0 5px 20px #0000000d}
-.gridwrap{overflow:auto;display:flex;justify-content:center;padding:8px}.grid{display:grid;gap:2px;background:#111;padding:2px}
-.cell{width:40px;height:40px;background:#fff;position:relative}.black{background:#111}.num{position:absolute;left:3px;top:2px;font-size:9px;font-weight:800}
-input{width:100%;height:100%;border:0;outline:0;background:transparent;text-align:center;font-size:22px;font-weight:800;text-transform:uppercase}.active{background:#ddd3ff}.focus{background:#bbaaff}.correct{background:#d9f5e2}.wrong{background:#ffd9dd}
-h2{font-size:18px;margin:5px 0 8px}.clues{display:grid;gap:16px}.clue{padding:9px;border:1px solid #ddd;border-radius:10px;background:#fafafa;cursor:pointer}.clue.selected{border-color:#6d4aff;background:#f2efff}.clue b{color:#6d4aff;margin-right:5px}
-.buttons{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}button{border:0;border-radius:10px;padding:12px 8px;font-weight:800;background:#ece8ff;color:#30206f}button.primary{background:#6d4aff;color:white}button.yellow{background:#ffcb05;color:#111}button.green{background:#d9f5e2;color:#176b35}button.red{background:#ffe0e4;color:#8d1521}
-.progress{height:8px;background:#eee;border-radius:99px;overflow:hidden;margin:5px 0 12px}.bar{height:100%;width:0;background:#6d4aff}
-#msg{min-height:24px;margin-top:10px;font-weight:800}.win{color:#198754}.warn{color:#a45a00}
-@media(max-width:820px){.layout{grid-template-columns:1fr}.cell{width:34px;height:34px}input{font-size:19px}}
-@media(max-width:430px){.cell{width:30px;height:30px}input{font-size:17px}.buttons{grid-template-columns:1fr 1fr}}
-</style></head>
-<body>
-<header><h1>🧩 Crucigrama Diario</h1><div class="sub">Anime · Pokémon · fútbol · videojuegos · cultura pop</div></header>
-<div class="app"><div class="top"><div class="pill" id="date"></div><div class="pill" id="theme"></div><div class="pill" id="score"></div></div>
-<div class="layout"><section class="card"><b>Progreso</b><div class="progress"><div class="bar" id="bar"></div></div>
-<div class="gridwrap"><div id="grid" class="grid"></div></div><div id="msg"></div>
-<div class="buttons"><button class="primary" onclick="checkGrid()">✓ Corregir cuadrícula</button><button class="yellow" onclick="revealWord()">💡 Revelar palabra</button><button class="green" onclick="checkWord()">✓ Corregir palabra</button><button class="red" onclick="revealGrid()">🔓 Revelar cuadrícula</button><button onclick="clearWord()">↺ Borrar palabra</button><button onclick="extra()">🎲 Partida extra</button></div>
-<p style="font-size:13px;color:#666">Toca una casilla para escribir. En una casilla compartida, tócala de nuevo para cambiar entre horizontal y vertical. La partida se guarda automáticamente.</p>
-</section><aside class="card"><div class="clues"><div><h2>Horizontales</h2><div id="across"></div></div><div><h2>Verticales</h2><div id="down"></div></div></div></aside></div></div>
-<script>
-const BANK=[
-["Pokémon","⚡",[["PIKACHU","Pokémon eléctrico que acompaña a Ash durante buena parte del anime."],["CHARIZARD","Evolución final de Charmander que combina Fuego y Volador."],["MEWTWO","Pokémon legendario creado artificialmente a partir del ADN de Mew."],["EEVEE","Pokémon conocido por tener numerosas evoluciones posibles."],["SINNOH","Región de Pokémon Diamante, Perla y Platino."],["DITTO","Pokémon capaz de transformarse en otros Pokémon."],["LUCARIO","Pokémon de tipo Lucha y Acero asociado al aura."],["POKEDEX","Dispositivo que registra información sobre las especies Pokémon."]]],
-["Anime","🍥",[["NARUTO","Ninja protagonista que sueña con convertirse en Hokage."],["GOKU","Protagonista de Dragon Ball perteneciente a la raza saiyan."],["LUFFY","Capitán de los Sombrero de Paja que busca el One Piece."],["ZORO","Espadachín de One Piece especializado en tres espadas."],["SAITAMA","Héroe calvo capaz de derrotar enemigos de un solo golpe."],["GOJO","Hechicero de Jujutsu Kaisen conocido por el Infinito."],["TANJIRO","Cazador de demonios protagonista de Kimetsu no Yaiba."],["DEKU","Nombre heroico de Izuku Midoriya."]]],
-["Fútbol","⚽",[["MESSI","Futbolista argentino que ganó el Mundial de 2022."],["RONALDO","Delantero portugués conocido por sus récords goleadores."],["BARCELONA","Club catalán cuyo estadio tradicional es el Camp Nou."],["NEYMAR","Atacante brasileño que pasó por Santos, Barcelona y PSG."],["PICHICHI","Trofeo español concedido al máximo goleador de LaLiga."],["PORTERO","Jugador que puede utilizar las manos dentro de su área."],["CHAMPIONS","Competición europea de clubes organizada por la UEFA."],["CANTERA","Sistema de formación de jóvenes jugadores de un club."]]],
-["Videojuegos","🎮",[["MARIO","Fontanero de Nintendo protagonista de una famosa saga."],["ZELDA","Princesa de Hyrule cuyo nombre da título a una saga."],["LINK","Héroe de The Legend of Zelda que empuña la Espada Maestra."],["SONIC","Erizo azul famoso por su enorme velocidad."],["KIRBY","Personaje rosa capaz de absorber enemigos y copiar habilidades."],["SAMUS","Cazarrecompensas protagonista de Metroid."],["BOSS","Enemigo especialmente poderoso al final de una zona."],["NINTENDO","Compañía japonesa detrás de Mario, Zelda y Pokémon."]]]
-];
-let data,words,sol,user,selected=null,dir="across",nums={};
-function seed(){let d=new Date(),s=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();return s}
-function rng(s){return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296}}
-function build(bank){
- let rand=rng(seed()), chosen=[...bank[2]].sort(()=>rand()-.5), placed=[], cells={};
- const key=(r,c)=>r+","+c;
- function can(w,r,c,d){let dr=d==="down",dc=d==="across",R=r,C=c;
-  if(cells[key(R-(dr?1:0),C-(dc?1:0))]||cells[key(R+(dr?w.length:0),C+(dc?w.length:0))])return false;
-  for(let i=0;i<w.length;i++){R=r+(dr?i:0);C=c+(dc?i:0);let e=cells[key(R,C)];if(e&&e.l!==w[i])return false}
-  return true}
- function put(w,r,c,d){let dr=d==="down",dc=d==="across",ps=[];for(let i=0;i<w.length;i++){let R=r+(dr?i:0),C=c+(dc?i:0),k=key(R,C);if(!cells[k])cells[k]={l:w[i]};cells[k].words??=[];cells[k].words.push(placed.length);ps.push([R,C])}placed.push({w:w,clue:arguments[0].clue||"",r,c,d})}
- let first=chosen[0];put(Object.assign(first[0],{clue:first[1]}),0,0,"across");
- for(let x=1;x<chosen.length;x++){let W=chosen[x][0],cl=chosen[x][1],opts=[];
-  for(let o of placed)for(let i=0;i<W.length;i++)for(let j=0;j<o.w.length;j++)if(W[i]===o.w[j]){
-   let d=o.d==="across"?"down":"across",r=o.r+(o.d==="down"?j:0)-(d==="down"?i:0),c=o.c+(o.d==="across"?j:0)-(d==="across"?i:0);
-   if(can(W,r,c,d))opts.push([r,c,d])}
-  if(opts.length){let q=opts[Math.floor(rand()*opts.length)];put(Object.assign(W,{clue:cl}),q[0],q[1],q[2])}
- }
- let minR=999,minC=999,maxR=-999,maxC=-999;Object.keys(cells).forEach(k=>{let[a,b]=k.split(",").map(Number);minR=Math.min(minR,a);maxR=Math.max(maxR,a);minC=Math.min(minC,b);maxC=Math.max(maxC,b)});
- let rows=maxR-minR+1,cols=maxC-minC+1,g=Array.from({length:rows},()=>Array(cols).fill(null));
- Object.keys(cells).forEach(k=>{let[a,b]=k.split(",").map(Number);g[a-minR][b-minC]=cells[k].l});
- placed.forEach(o=>{o.r-=minR;o.c-=minC});return {g,placed,rows,cols}
+:root{
+ --bg:#f5f7fb;--card:#fff;--text:#171923;--muted:#69707d;--line:#e4e7ee;
+ --accent:#5b4bdb;--accent2:#8d7cf2;--soft:#eeeaff;--good:#dff7e8;--bad:#ffe1e5;
+ --cell:34px;--shadow:0 12px 35px rgba(31,35,52,.10)
 }
-function init(extra=false){let b=BANK[extra?Math.floor(Math.random()*BANK.length):seed()%BANK.length];let z=build(b);data=b;words=z.placed;sol=z.g;user=JSON.parse(localStorage.getItem("cd-"+new Date().toISOString().slice(0,10)))||sol.map(r=>r.map(x=>x?"":""));assign();render()}
-function assign(){nums={};let n=1;for(let r=0;r<sol.length;r++)for(let c=0;c<sol[0].length;c++)if(sol[r][c]){if((c===0||!sol[r][c-1])||(r===0||!sol[r-1][c]))nums[r+","+c]=n++}words.forEach(w=>w.n=nums[w.r+","+w.c]||0)}
-function save(){localStorage.setItem("cd-"+new Date().toISOString().slice(0,10),JSON.stringify(user))}
-function render(){document.getElementById("date").textContent="📅 "+new Date().toLocaleDateString("es-ES",{day:"numeric",month:"long"});document.getElementById("theme").textContent=data[1]+" "+data[0];
-let g=document.getElementById("grid");g.style.gridTemplateColumns=`repeat(${sol[0].length},var(--cell,40px))`;g.innerHTML="";
-for(let r=0;r<sol.length;r++)for(let c=0;c<sol[0].length;c++){let x=document.createElement("div");x.className="cell";if(!sol[r][c]){x.classList.add("black");g.append(x);continue}if(nums[r+","+c]){let q=document.createElement("span");q.className="num";q.textContent=nums[r+","+c];x.append(q)}let i=document.createElement("input");i.value=user[r][c];i.dataset.r=r;i.dataset.c=c;i.maxLength=1;i.onclick=()=>{if(selected&&selected.r==r&&selected.c==c)dir=dir==="across"?"down":"across";select(r,c)};i.onfocus=()=>select(r,c);i.oninput=()=>{i.value=i.value.toUpperCase().replace(/[^A-ZÑ]/g,"");user[r][c]=i.value;save();progress();if(i.value)move(1)};x.append(i);g.append(x)}
-["across","down"].forEach(d=>{let box=document.getElementById(d);box.innerHTML="";words.filter(w=>w.d===d).sort((a,b)=>a.n-b.n).forEach(w=>{let e=document.createElement("div");e.className="clue";e.innerHTML="<b>"+w.n+".</b>"+w.clue+" <small>("+w.w.length+")</small>";e.onclick=()=>{dir=d;selected={r:w.r,c:w.c};focus(w.r,w.c)};box.append(e)})});progress()}
-function select(r,c){selected={r,c};highlight()}
-function focus(r,c){let i=document.querySelector(`input[data-r="${r}"][data-c="${c}"]`);i?.focus();highlight()}
-function current(){return words.find(w=>w.d===dir&&cells(w).some(p=>p[0]==selected?.r&&p[1]==selected?.c))||words[0]}
-function cells(w){return [...Array(w.w.length)].map((_,i)=>[w.r+(w.d==="down"?i:0),w.c+(w.d==="across"?i:0)])}
-function highlight(){document.querySelectorAll(".cell").forEach(x=>x.classList.remove("active","focus"));if(!selected)return;let w=current();cells(w).forEach(([r,c])=>document.querySelector(`input[data-r="${r}"][data-c="${c}"]`)?.parentElement.classList.add("active"));document.querySelector(`input[data-r="${selected.r}"][data-c="${selected.c}"]`)?.parentElement.classList.add("focus")}
-function move(step){let w=current(),cs=cells(w),i=cs.findIndex(p=>p[0]==selected.r&&p[1]==selected.c);i+=step;if(i>=0&&i<cs.length){selected={r:cs[i][0],c:cs[i][1]};focus(selected.r,selected.c)}}
-function progress(){let t=0,f=0;sol.forEach((r,a)=>r.forEach((x,c)=>{if(x){t++;if(user[a][c])f++}}));document.getElementById("score").textContent=f+" / "+t;document.getElementById("bar").style.width=(f/t*100)+"%"}
-function checkWord(){let w=current(),ok=true;cells(w).forEach(([r,c])=>{let e=document.querySelector(`input[data-r="${r}"][data-c="${c}"]`).parentElement;e.classList.remove("wrong","correct");if(user[r][c]&&user[r][c]!==sol[r][c]){ok=false;e.classList.add("wrong")}else if(user[r][c])e.classList.add("correct")});msg(ok?"✓ La palabra no tiene errores.":"✗ Hay alguna letra incorrecta.","warn")}
-function checkGrid(){let bad=0,empty=0;sol.forEach((r,a)=>r.forEach((x,c)=>{if(x){let e=document.querySelector(`input[data-r="${a}"][data-c="${c}"]`).parentElement;e.classList.remove("wrong","correct");if(!user[a][c])empty++;else if(user[a][c]!==x){bad++;e.classList.add("wrong")}else e.classList.add("correct")}}));msg(bad||empty?`Revisión: ${bad} incorrectas y ${empty} vacías.`:"🎉 ¡Crucigrama completado!","win")}
-function revealWord(){let w=current();cells(w).forEach(([r,c])=>user[r][c]=sol[r][c]);save();render();msg("💡 Palabra revelada.","warn")}
-function revealGrid(){sol.forEach((r,a)=>r.forEach((x,c)=>{if(x)user[a][c]=x}));save();render();msg("🔓 Cuadrícula revelada.","warn")}
-function clearWord(){let w=current();cells(w).forEach(([r,c])=>user[r][c]="");save();render();selected={r:w.r,c:w.c};focus(w.r,w.c)}
-function msg(t,c){let e=document.getElementById("msg");e.textContent=t;e.className=c||""}function extra(){init(true);msg("🎲 Partida extra.","warn")}
-init();
-</script></body></html>
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 10% 0%,#eeeaff 0,#f5f7fb 28%,#f5f7fb 100%);
+ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+button,input{font:inherit}
+button{cursor:pointer}
+header{padding:18px 14px 10px;text-align:center}
+.brand{font-size:13px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+h1{margin:3px 0 2px;font-size:32px;line-height:1.05}
+.sub{color:var(--muted);font-size:14px}
+.hero{max-width:1160px;margin:8px auto 14px;padding:0 14px}
+.heroCard{position:relative;overflow:hidden;border-radius:24px;padding:18px 20px;min-height:128px;
+ background:linear-gradient(135deg,var(--accent),#8b78ee);color:#fff;box-shadow:var(--shadow)}
+.heroCard:before,.heroCard:after{position:absolute;opacity:.18;font-size:88px;line-height:1}
+.heroCard:before{content:var(--art);right:18px;top:-5px;transform:rotate(7deg)}
+.heroCard:after{content:var(--art2);right:115px;bottom:-26px;font-size:60px;transform:rotate(-12deg)}
+.heroText{position:relative;z-index:1;max-width:75%}
+.heroTitle{font-size:22px;font-weight:900}
+.heroMeta{margin-top:5px;font-size:13px;opacity:.9}
+.app{max-width:1160px;margin:auto;padding:0 14px 30px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:12px}
+.pill{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 12px;font-weight:800;font-size:13px;box-shadow:0 3px 12px rgba(0,0,0,.04)}
+.layout{display:grid;grid-template-columns:minmax(350px,680px) minmax(300px,1fr);gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:14px;box-shadow:var(--shadow)}
+.sectionTitle{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.sectionTitle b{font-size:15px}.mini{font-size:12px;color:var(--muted)}
+.progress{height:9px;background:#edf0f5;border-radius:99px;overflow:hidden;margin:6px 0 12px}
+.bar{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .2s}
+.gridwrap{overflow:auto;-webkit-overflow-scrolling:touch;display:flex;justify-content:center;padding:6px 2px 12px}
+.grid{display:grid;gap:2px;background:#1c1d25;padding:3px;border-radius:8px;box-shadow:0 8px 18px rgba(0,0,0,.10)}
+.cell{width:var(--cell);height:var(--cell);background:#fff;position:relative;border-radius:2px}
+.cell.black{background:#20222b}
+.cell.active{background:#ded9ff}.cell.focus{background:#bfb4ff}
+.cell.correct{background:#dff7e8}.cell.wrong{background:#ffe1e5}
+.num{position:absolute;left:3px;top:1px;font-size:8px;line-height:9px;font-weight:900;color:#4d5360;z-index:2}
+.cell input{width:100%;height:100%;border:0;outline:0;background:transparent;text-align:center;text-transform:uppercase;
+ font-size:19px;font-weight:900;color:#171923;padding:7px 1px 1px}
+.cell.focus input{color:#2d236e}
+.msg{min-height:24px;margin:4px 0 7px;text-align:center;font-weight:850;font-size:14px}
+.msg.good{color:#16834b}.msg.warn{color:#a55b00}.msg.bad{color:#b51e36}
+.buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+button{border:0;border-radius:12px;padding:11px 8px;font-weight:850;background:#f0eff8;color:#30295b}
+button.primary{background:var(--accent);color:#fff}.yellow{background:#fff0b8}.green{background:var(--good);color:#146b3d}
+.red{background:var(--bad);color:#9e1830}.dark{background:#242633;color:#fff}
+button:disabled{opacity:.45;cursor:not-allowed}
+.tip{margin:10px 2px 0;color:var(--muted);font-size:12px;line-height:1.45;text-align:center}
+.clues{display:grid;gap:16px;max-height:690px;overflow:auto;padding-right:2px}
+h2{font-size:17px;margin:0 0 8px}.clueList{display:grid;gap:7px}
+.clue{padding:10px 11px;border:1px solid var(--line);border-radius:12px;background:#fbfcfe;cursor:pointer;line-height:1.3}
+.clue.selected{border-color:var(--accent);background:var(--soft);box-shadow:0 0 0 2px rgba(91,75,219,.08)}
+.clue b{color:var(--accent);margin-right:5px}.clue small{color:var(--muted);float:right;font-weight:800}
+.actions2{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.actions2 button{flex:1;min-width:130px}
+.second{margin-top:12px;padding:12px;border-radius:15px;background:linear-gradient(135deg,#f4f1ff,#fbfbff);border:1px solid #ded8ff}
+.second b{display:block;margin-bottom:3px}
+.stats{display:flex;justify-content:space-between;gap:8px;margin-top:10px;color:var(--muted);font-size:12px}
+.kbd{font-weight:800;color:#4d5360}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.clues{max-height:none}.heroText{max-width:85%}}
+@media(max-width:520px){:root{--cell:28px}.buttons{grid-template-columns:1fr 1fr}.heroCard{min-height:120px}.heroCard:before{font-size:70px}.heroCard:after{font-size:48px;right:90px}.heroText{max-width:78%}h1{font-size:28px}.gridwrap{justify-content:flex-start}}
+@media(min-width:521px) and (max-width:850px){:root{--cell:32px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">🧩 Crucigrama Diario</div>
+  <h1>Dos retos. Cero repetición.</h1>
+  <div class="sub">Un crucigrama principal y un segundo reto diferente cada día.</div>
+</header>
+
+<div class="hero">
+  <div class="heroCard" id="heroCard">
+    <div class="heroText">
+      <div class="heroTitle" id="heroTitle">Cargando...</div>
+      <div class="heroMeta" id="heroMeta"></div>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+  <div class="toolbar">
+    <div class="pill" id="date"></div>
+    <div class="pill" id="theme"></div>
+    <div class="pill" id="slot"></div>
+    <div class="pill" id="score"></div>
+    <div class="pill" id="timer">⏱ 00:00</div>
+  </div>
+
+  <div class="layout">
+    <section class="card">
+      <div class="sectionTitle"><b>Progreso</b><span class="mini" id="difficulty"></span></div>
+      <div class="progress"><div class="bar" id="bar"></div></div>
+      <div class="gridwrap"><div id="grid" class="grid"></div></div>
+      <div id="msg" class="msg"></div>
+
+      <div class="buttons">
+        <button class="primary" id="checkGrid">✓ Corregir cuadrícula</button>
+        <button class="yellow" id="revealWord">💡 Revelar palabra</button>
+        <button class="green" id="checkWord">✓ Corregir palabra</button>
+        <button class="red" id="revealGrid">🔓 Revelar cuadrícula</button>
+        <button id="revealLetter">🔎 Revelar letra</button>
+        <button id="clearWord">↺ Borrar palabra</button>
+      </div>
+
+      <div class="actions2">
+        <button id="secondBtn" class="dark">🎲 Segundo crucigrama</button>
+        <button id="newThemeBtn">🎨 Ver tema</button>
+      </div>
+
+      <div class="second" id="secondInfo"></div>
+      <div class="tip">
+        Toca una casilla para escribir. Tócala otra vez para cambiar entre horizontal y vertical.
+        Las flechas y retroceso también funcionan. La partida se guarda automáticamente.
+      </div>
+      <div class="stats"><span id="mistakes">Errores: 0</span><span class="kbd">iPad: teclado o toque</span></div>
+    </section>
+
+    <aside class="card">
+      <div class="clues">
+        <div><h2>Horizontales</h2><div id="across" class="clueList"></div></div>
+        <div><h2>Verticales</h2><div id="down" class="clueList"></div></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+/* Banco amplio: cada tema aporta palabras para que el generador pueda crear
+   muchos crucigramas diferentes a partir de la fecha y del segundo reto. */
+const BANK = [
+["Pokémon","⚡","🔴",[
+["PIKACHU","Pokémon eléctrico que acompaña a Ash durante buena parte del anime."],
+["CHARIZARD","Evolución final de Charmander que combina Fuego y Volador."],
+["MEWTWO","Pokémon legendario creado artificialmente a partir del ADN de Mew."],
+["EEVEE","Pokémon conocido por tener numerosas evoluciones posibles."],
+["SINNOH","Región de Diamante, Perla y Platino."],
+["DITTO","Pokémon capaz de transformarse en otros Pokémon."],
+["LUCARIO","Pokémon de tipo Lucha y Acero asociado al aura."],
+["POKEDEX","Dispositivo que registra información sobre especies Pokémon."],
+["GENGAR","Pokémon fantasma que suele aparecer detrás de entrenadores desprevenidos."],
+["JIGGLYPUFF","Pokémon que usa su canto para hacer dormir a quien lo escucha."],
+["SNORLAX","Pokémon famoso por dormir y bloquear caminos."],
+["BULBASAUR","Pokémon inicial de tipo Planta y Veneno."],
+["CHARMANDER","Pokémon inicial de tipo Fuego con una llama en la cola."],
+["SQUIRTLE","Pokémon inicial de tipo Agua con aspecto de tortuga."],
+["MOLTRES","Ave legendaria asociada al fuego."],
+["ARTICUNO","Ave legendaria asociada al hielo."],
+["ZAPDOS","Ave legendaria asociada a la electricidad."],
+["GYARADOS","Pokémon de Agua y Volador conocido por su carácter agresivo."]
+]],
+["Anime","🍥","🗡️",[
+["NARUTO","Ninja protagonista que sueña con convertirse en Hokage."],
+["GOKU","Protagonista de Dragon Ball perteneciente a la raza saiyan."],
+["LUFFY","Capitán de los Sombrero de Paja que busca el One Piece."],
+["ZORO","Espadachín de One Piece especializado en tres espadas."],
+["SAITAMA","Héroe calvo capaz de derrotar enemigos de un solo golpe."],
+["GOJO","Hechicero de Jujutsu Kaisen conocido por el Infinito."],
+["TANJIRO","Cazador de demonios protagonista de Kimetsu no Yaiba."],
+["DEKU","Nombre heroico de Izuku Midoriya."],
+["ICHIGO","Protagonista de Bleach que se convierte en shinigami."],
+["LEVI","Capitán del Cuerpo de Exploración en Attack on Titan."],
+["EREN","Personaje central de Attack on Titan."],
+["KAKASHI","Ninja de Konoha famoso por su Sharingan y su máscara."],
+["VEGETA","Príncipe saiyan y rival habitual de Goku."],
+["SAKURA","Ninja médica del Equipo 7 de Naruto."],
+["INOSUKE","Cazador de demonios que combate con dos espadas dentadas."],
+["MOB","Protagonista de Mob Psycho 100 con enormes poderes psíquicos."],
+["DENJI","Protagonista de Chainsaw Man que puede transformarse."],
+["SUKUNA","Rey de las Maldiciones de Jujutsu Kaisen."]
+]],
+["Fútbol","⚽","🏟️",[
+["MESSI","Delantero argentino campeón del Mundial de 2022."],
+["RONALDO","Delantero portugués conocido por sus récords goleadores."],
+["NEYMAR","Atacante brasileño que pasó por Santos, Barcelona y PSG."],
+["PICHICHI","Trofeo español concedido al máximo goleador de LaLiga."],
+["PORTERO","Jugador que puede utilizar las manos dentro de su área."],
+["CHAMPIONS","Competición europea de clubes organizada por la UEFA."],
+["CANTERA","Sistema de formación de jóvenes jugadores de un club."],
+["DERBI","Partido entre equipos de una misma ciudad o zona cercana."],
+["PENALTI","Lanzamiento desde los once metros."],
+["CORNER","Saque que se ejecuta desde una esquina del campo."],
+["OFFSIDE","Término inglés usado para referirse al fuera de juego."],
+["TRIBUNA","Zona del estadio desde la que se observa el partido."],
+["CAPITAN","Jugador que porta el brazalete del equipo."],
+["REMATE","Acción de golpear el balón buscando finalizar una jugada."],
+["LALIGA","Principal campeonato de fútbol de clubes de España."],
+["MUNDIAL","Competición de selecciones que organiza FIFA cada cuatro años."],
+["ESTADIO","Recinto donde se disputan partidos de fútbol."],
+["TIFO","Gran composición visual desplegada por una afición."]
+]],
+["Videojuegos","🎮","🕹️",[
+["MARIO","Fontanero de Nintendo protagonista de una famosa saga."],
+["ZELDA","Princesa de Hyrule cuyo nombre da título a una saga."],
+["LINK","Héroe de The Legend of Zelda que empuña la Espada Maestra."],
+["SONIC","Erizo azul famoso por su enorme velocidad."],
+["KIRBY","Personaje rosa capaz de absorber enemigos y copiar habilidades."],
+["SAMUS","Cazarrecompensas protagonista de Metroid."],
+["BOSS","Enemigo especialmente poderoso al final de una zona."],
+["NINTENDO","Compañía japonesa detrás de Mario, Zelda y Pokémon."],
+["SEPHIROTH","Antagonista de Final Fantasy VII con una larga espada."],
+["KRATOS","Protagonista de God of War."],
+["HOLLOWKNIGHT","Caballero protagonista de un metroidvania ambientado en Hallownest."],
+["CELESTE","Videojuego de plataformas centrado en escalar una montaña."],
+["PORTAL","Juego de puzles basado en una pistola que crea portales."],
+["SAMUS","Cazarrecompensas de la saga Metroid."],
+["GERALT","Protagonista de The Witcher."],
+["PACMAN","Arcade clásico en el que una criatura amarilla come puntos."],
+["TETRIS","Clásico de piezas que encajan para formar líneas."],
+["MINECRAFT","Juego de construcción y supervivencia basado en bloques."]
+]],
+["Cine y series","🎬","🍿",[
+["BATMAN","Héroe de Gotham que no posee superpoderes innatos."],
+["JOKER","Enemigo clásico de Batman."],
+["FRODO","Hobbit encargado de llevar el Anillo en El Señor de los Anillos."],
+["GOLLUM","Criatura obsesionada con el Anillo Único."],
+["VADER","Sith de Star Wars conocido por su respiración mecánica."],
+["YODA","Maestro Jedi de pequeño tamaño y gran longevidad."],
+["HOGWARTS","Colegio de magia al que asiste Harry Potter."],
+["WEDNESDAY","Protagonista de la serie centrada en la familia Addams."],
+["ELEVEN","Personaje con poderes de Stranger Things."],
+["MATRIX","Película de ciencia ficción protagonizada por Neo."],
+["NEO","Protagonista de The Matrix."],
+["GANDALF","Mago que guía a la Comunidad del Anillo."],
+["RIPLEY","Protagonista de la saga Alien."],
+["TERMINATOR","Cyborg asesino de la conocida saga de ciencia ficción."],
+["SHREK","Ogro verde protagonista de una saga de animación."],
+["PIXAR","Estudio de animación creador de Toy Story."],
+["HOBBIT","Ser de baja estatura y grandes pies en Tolkien."],
+["SAURON","Enemigo principal de El Señor de los Anillos."]
+]],
+["Música","🎵","🎧",[
+["RITMO","Organización temporal de los sonidos."],
+["MELODIA","Sucesión de sonidos que forma una idea musical."],
+["CORO","Conjunto de personas que cantan juntas."],
+["BATERIA","Instrumento de percusión habitual en una banda."],
+["GUITARRA","Instrumento de cuerda muy usado en música popular."],
+["PIANO","Instrumento de teclas y cuerdas percutidas."],
+["DJ","Persona que selecciona y mezcla música."],
+["VINILO","Formato de disco usado para escuchar música."],
+["ESTROFA","Parte de una canción que se repite con distintas letras."],
+["ESTUDIO","Lugar donde se graban canciones."],
+["CONCIERTO","Actuación musical ante público."],
+["MICROFONO","Dispositivo que capta la voz o el sonido."],
+["ALBUM","Conjunto de canciones publicado como una obra."],
+["SINGLE","Lanzamiento musical centrado normalmente en una canción."],
+["BEAT","Base rítmica sobre la que puede construirse una canción."],
+["RAP","Estilo vocal basado en ritmo y rima."],
+["POP","Género de música popular de gran difusión."],
+["PLATINO","Certificación que puede recibir una grabación por sus ventas."]
+]],
+["Ciencia","🔬","🧪",[
+["ATOMO","Unidad básica de la materia que conserva las propiedades de un elemento."],
+["CELULA","Unidad básica de los seres vivos."],
+["GEN","Unidad de información hereditaria."],
+["NEURONA","Célula especializada en transmitir impulsos nerviosos."],
+["GRAVEDAD","Interacción que atrae los cuerpos con masa."],
+["MATERIA","Todo aquello que tiene masa y ocupa un lugar."],
+["ENERGIA","Capacidad de producir cambios o realizar trabajo."],
+["EVOLUCION","Cambio de las poblaciones a lo largo de generaciones."],
+["FOSIL","Resto o huella de un organismo del pasado."],
+["ECOSISTEMA","Conjunto de seres vivos y su entorno."],
+["VIRUS","Agente infeccioso que necesita células para replicarse."],
+["BACTERIA","Microorganismo unicelular muy abundante en la naturaleza."],
+["GALAXIA","Gran conjunto de estrellas, gas y polvo."],
+["PLANETA","Cuerpo celeste que orbita una estrella."],
+["MOLECULA","Conjunto de átomos unidos químicamente."],
+["ELECTRON","Partícula subatómica con carga negativa."],
+["NEUTRON","Partícula del núcleo atómico sin carga eléctrica."],
+["TELESCOPE","Instrumento para observar objetos astronómicos."]
+]],
+["Historia","🏛️","⚔️",[
+["ROMA","Civilización que dominó gran parte del Mediterráneo antiguo."],
+["EGIPTO","Civilización del Nilo famosa por sus pirámides."],
+["NAPOLEON","Emperador francés que dominó gran parte de Europa a comienzos del XIX."],
+["COLON","Navegante relacionado con la llegada europea a América en 1492."],
+["IMPERIO","Estado que extiende su dominio sobre otros territorios."],
+["FEUDALISMO","Sistema social y político característico de buena parte de la Edad Media europea."],
+["RENACIMIENTO","Movimiento cultural europeo posterior a la Edad Media."],
+["REVOLUCION","Cambio profundo y rápido en una estructura política o social."],
+["VIKINGOS","Pueblos escandinavos conocidos por sus viajes y expediciones."],
+["ROMANOS","Pueblo que construyó una extensa civilización mediterránea."],
+["FARAON","Título tradicional del gobernante del antiguo Egipto."],
+["CASTILLO","Construcción fortificada típica de la Europa medieval."],
+["TRATADO","Acuerdo formal entre Estados."],
+["MONARQUIA","Forma de gobierno en la que existe un monarca."],
+["REPUBLICA","Forma de gobierno sin monarca hereditario como jefe de Estado."],
+["BURGOS","Ciudades medievales asociadas al crecimiento del comercio."],
+["CRUZADAS","Expediciones militares medievales vinculadas a Tierra Santa."],
+["HISTORIA","Disciplina que estudia las sociedades del pasado."]
+]],
+["Geografía","🌍","🗺️",[
+["EUROPA","Continente situado al oeste de Asia."],
+["AFRICA","Continente atravesado por el ecuador."],
+["AMERICA","Continente o conjunto continental situado entre Atlántico y Pacífico."],
+["ASIA","Mayor continente del planeta por superficie y población."],
+["AUSTRALIA","País y continente situado entre los océanos Índico y Pacífico."],
+["AMAZONAS","Gran río de Sudamérica."],
+["PIRINEOS","Cordillera que separa España y Francia."],
+["EVEREST","Montaña más alta sobre el nivel del mar."],
+["SAHARA","Gran desierto del norte de África."],
+["MEDITERRANEO","Mar situado entre Europa, África y Asia."],
+["JAPON","País insular del este de Asia."],
+["ISLANDIA","País insular del Atlántico Norte conocido por sus volcanes."],
+["ANDES","Gran cordillera que recorre el oeste de Sudamérica."],
+["NILO","Río asociado históricamente al antiguo Egipto."],
+["PACIFICO","Océano más extenso del planeta."],
+["ATLANTICO","Océano situado entre América y Europa-África."],
+["ARAGON","Comunidad autónoma española situada en el noreste peninsular."],
+["ZARAGOZA","Capital de Aragón situada a orillas del Ebro."]
+]],
+["Tecnología","💻","📱",[
+["INTERNET","Red mundial que conecta millones de dispositivos."],
+["ALGORITMO","Conjunto ordenado de pasos para resolver un problema."],
+["SERVIDOR","Equipo que ofrece servicios o recursos a otros dispositivos."],
+["NAVEGADOR","Programa utilizado para visitar páginas web."],
+["TECLADO","Periférico formado por teclas para introducir texto."],
+["PANTALLA","Superficie donde se muestran imágenes y texto."],
+["CODIGO","Conjunto de instrucciones escritas para un programa."],
+["DATOS","Información que puede ser almacenada y procesada."],
+["NUBE","Forma habitual de referirse a servicios de computación remota."],
+["WIFI","Tecnología de conexión inalámbrica a redes."],
+["BLUETOOTH","Tecnología inalámbrica de corto alcance."],
+["PIXEL","Unidad mínima de una imagen digital."],
+["ROBOT","Máquina programable capaz de realizar tareas."],
+["CONSOLA","Dispositivo dedicado principalmente a jugar videojuegos."],
+["EMULADOR","Programa que reproduce el comportamiento de otro sistema."],
+["IA","Siglas habituales de inteligencia artificial."],
+["MEMORIA","Componente o recurso utilizado para almacenar información."],
+["PROCESADOR","Componente que ejecuta instrucciones y realiza cálculos."]
+]],
+["Naturaleza","🌿","🦊",[
+["BOSQUE","Ecosistema dominado por árboles."],
+["OCEANO","Gran masa de agua salada que cubre buena parte del planeta."],
+["VOLCAN","Abertura de la corteza terrestre por la que puede salir magma."],
+["GLACIAR","Gran masa de hielo que se desplaza lentamente."],
+["TIGRE","Gran felino de pelaje rayado."],
+["DELFIN","Mamífero marino conocido por su inteligencia."],
+["AGUILA","Ave rapaz de gran tamaño y fuerte pico."],
+["LOBO","Mamífero carnívoro que vive en manadas."],
+["ROBLE","Árbol del género Quercus."],
+["BAMBU","Planta de tallos leñosos muy característica de Asia."],
+["ARRECIFE","Estructura marina que puede estar formada por corales."],
+["SELVA","Bosque cálido y muy húmedo de gran biodiversidad."],
+["DESIERTO","Región con precipitaciones muy escasas."],
+["CASCADA","Caída de agua desde cierta altura."],
+["MARIPOSA","Insecto adulto de alas cubiertas de escamas."],
+["PINGUINO","Ave marina que no vuela y vive principalmente en el hemisferio sur."],
+["ZORRO","Mamífero de la familia de los cánidos."],
+["OSO","Mamífero de gran tamaño presente en distintas regiones del planeta."]
+]],
+["Comida","🍕","🍜",[
+["PIZZA","Preparación italiana de masa horneada cubierta con distintos ingredientes."],
+["PAELLA","Plato de arroz originario de la tradición culinaria valenciana."],
+["SUSHI","Preparación japonesa que suele incluir arroz y otros ingredientes."],
+["TORTILLA","En España suele prepararse con huevo y patata."],
+["CHOCOLATE","Alimento elaborado a partir del cacao."],
+["QUESO","Alimento producido a partir de leche cuajada."],
+["PAN","Alimento básico elaborado principalmente con harina y agua."],
+["PASTA","Alimento italiano elaborado normalmente a base de trigo."],
+["HAMBURGUESA","Preparación con una pieza de carne o alternativa dentro de un pan."],
+["TACO","Preparación mexicana servida normalmente en una tortilla."],
+["RAMEN","Sopa japonesa de fideos."],
+["CROQUETA","Porción rebozada con relleno cremoso que se fríe."],
+["GAZPACHO","Sopa fría española elaborada habitualmente con tomate y otras hortalizas."],
+["CHURRO","Masa frita alargada que suele acompañarse con chocolate."],
+["HELADO","Postre frío de textura cremosa."],
+["CACAO","Semilla de la que se obtiene el chocolate."],
+["CANELA","Especia aromática usada en postres y bebidas."],
+["LIMON","Cítrico amarillo de sabor ácido."]
+]],
+["Espacio","🚀","🌌",[
+["MARTE","Planeta rojo del sistema solar."],
+["JUPITER","Planeta más grande del sistema solar."],
+["SATURNO","Planeta famoso por sus anillos."],
+["LUNA","Satélite natural de la Tierra."],
+["SOL","Estrella alrededor de la que orbita la Tierra."],
+["COMETA","Cuerpo formado por hielo, polvo y roca que puede desarrollar una cola."],
+["ASTEROIDE","Cuerpo rocoso que orbita una estrella."],
+["ORBITA","Trayectoria de un cuerpo alrededor de otro."],
+["COSMOS","Universo considerado como un conjunto ordenado."],
+["NEBULOSA","Nube interestelar de gas y polvo."],
+["SUPERNOVA","Explosión estelar de enorme energía."],
+["GALAXIA","Sistema gigantesco formado por estrellas, gas, polvo y materia oscura."],
+["SATELITE","Objeto que orbita un planeta u otro cuerpo."],
+["ASTRONAUTA","Persona entrenada para viajar al espacio."],
+["ECLIPSE","Fenómeno en el que un cuerpo celeste oculta parcial o totalmente a otro."],
+["MERCURIO","Planeta más cercano al Sol."],
+["VENUS","Segundo planeta desde el Sol y muy brillante visto desde la Tierra."],
+["URANO","Planeta gigante de hielo con una inclinación axial muy marcada."]
+]],
+["Mitología","🏺","🐉",[
+["ZEUS","Principal dios olímpico en la mitología griega."],
+["ATENEA","Diosa griega asociada a la sabiduría y la estrategia."],
+["HADES","Dios griego relacionado con el mundo de los muertos."],
+["ARES","Dios griego relacionado con la guerra."],
+["ODIN","Principal dios de la mitología nórdica."],
+["THOR","Dios nórdico asociado al trueno y al martillo Mjolnir."],
+["LOKI","Figura de la mitología nórdica asociada al engaño y la astucia."],
+["MEDUSA","Figura mitológica cuyo cabello estaba formado por serpientes."],
+["PEGASO","Caballo alado de la mitología griega."],
+["MINOTAURO","Ser con cuerpo humano y cabeza de toro."],
+["HERCULES","Héroe griego famoso por sus doce trabajos."],
+["FENIX","Ave mítica que renace de sus propias cenizas."],
+["DRAGON","Criatura fantástica presente en numerosas mitologías."],
+["POSEIDON","Dios griego del mar."],
+["AFRODITA","Diosa griega relacionada con el amor y la belleza."],
+["HERMES","Dios griego mensajero de los dioses."],
+["APOLO","Dios griego asociado con el Sol, la música y otras artes."],
+["VALHALLA","Salón de la mitología nórdica asociado a los guerreros caídos."]
+]]
+];
+
+const DIFFICULTIES=["Difícil","Difícil+","Experto","Experto","Difícil+","Experto","Difícil","Experto"];
+
+const state={
+ data:null, words:[], sol:[], user:[], selected:null, dir:"across",
+ nums:{}, slot:1, mistakes:0, seconds:0, timer:null, completed:false
+};
+
+function dateKey(){
+ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function dayNumber(){
+ const d=new Date(datestr()); return Math.floor((d-new Date("2024-01-01T00:00:00"))/86400000);
+}
+function datestr(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function seeded(seed){let s=(seed>>>0);return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296}}
+function norm(w){return w.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().replace(/[^A-ZÑ]/g,"")}
+function hashSeed(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+
+function shuffle(arr,rand){
+ const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(rand()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a;
+}
+
+function build(themeIndex,slot){
+ const bank=BANK[themeIndex], rand=seeded(hashSeed(dateKey()+"|"+slot+"|"+themeIndex));
+ let candidates=shuffle(bank[3].filter(x=>norm(x[0]).length>=4),rand).map(x=>({w:norm(x[0]),clue:x[1]}));
+ candidates.sort((a,b)=>b.w.length-a.w.length);
+ const SIZE=15, center=Math.floor(SIZE/2);
+ let cells=new Map(), placed=[];
+ const key=(r,c)=>r+","+c;
+ const get=(r,c)=>cells.get(key(r,c));
+ const aroundEmpty=(r,c)=>[[r-1,c],[r+1,c],[r,c-1],[r,c+1]].every(([rr,cc])=>!get(rr,cc));
+ function fits(w,r,c,d,requireCross){
+   const dr=d==="down"?1:0, dc=d==="across"?1:0;
+   if(r<0||c<0||r+(w.length-1)*dr>=SIZE||c+(w.length-1)*dc>=SIZE)return null;
+   let crosses=0;
+   const before=[r-dr,c-dc], after=[r+dr*w.length,c+dc*w.length];
+   if(get(...before)||get(...after))return null;
+   for(let i=0;i<w.length;i++){
+     const rr=r+dr*i,cc=c+dc*i,e=get(rr,cc);
+     if(e && e.l!==w[i])return null;
+     if(!e){
+       if(d==="across"){
+         if(get(rr-1,cc)||get(rr+1,cc))return null;
+       }else{
+         if(get(rr,cc-1)||get(rr,cc+1))return null;
+       }
+     }else crosses++;
+   }
+   if(requireCross && crosses===0)return null;
+   return crosses;
+ }
+ function place(obj,r,c,d){
+   const dr=d==="down"?1:0,dc=d==="across"?1:0;
+   const idx=placed.length;
+   for(let i=0;i<obj.w.length;i++){
+     const rr=r+dr*i,cc=c+dc*i,k=key(rr,cc);
+     if(!cells.has(k))cells.set(k,{l:obj.w[i],words:[]});
+     cells.get(k).words.push(idx);
+   }
+   placed.push({w:obj.w,clue:obj.clue,r,c,d});
+ }
+ // Longest word starts centrally.
+ const first=candidates[0]; place(first,center,center-Math.floor(first.w.length/2),"across");
+ for(const obj of candidates.slice(1)){
+   if(placed.length>=16)break;
+   let opts=[];
+   for(const p of placed){
+     for(let i=0;i<obj.w.length;i++)for(let j=0;j<p.w.length;j++){
+       if(obj.w[i]!==p.w[j])continue;
+       const d=p.d==="across"?"down":"across";
+       const r=p.r+(p.d==="down"?j:0)-(d==="down"?i:0);
+       const c=p.c+(p.d==="across"?j:0)-(d==="across"?i:0);
+       const cr=fits(obj.w,r,c,d,true);
+       if(cr!==null)opts.push({r,c,d,cr});
+     }
+   }
+   if(opts.length){
+     opts.sort((a,b)=>b.cr-a.cr);
+     const top=opts.slice(0,Math.min(8,opts.length));
+     const pick=top[Math.floor(rand()*top.length)];
+     place(obj,pick.r,pick.c,pick.d);
+   }
+ }
+ // Normalize to a compact rectangular grid.
+ let minR=99,minC=99,maxR=-99,maxC=-99;
+ for(const k of cells.keys()){const [r,c]=k.split(",").map(Number);minR=Math.min(minR,r);maxR=Math.max(maxR,r);minC=Math.min(minC,c);maxC=Math.max(maxC,c)}
+ const rows=maxR-minR+1,cols=maxC-minC+1;
+ let g=Array.from({length:rows},()=>Array(cols).fill(null));
+ for(const [k,v] of cells){const [r,c]=k.split(",").map(Number);g[r-minR][c-minC]=v.l}
+ placed.forEach(p=>{p.r-=minR;p.c-=minC});
+ // If generation is too sparse, retry with a different deterministic seed by using more words is handled by a second pass.
+ return {g,placed,rows,cols};
+}
+
+function storageKey(slot){return "cd-v4-"+dateKey()+"-"+slot}
+function metaKey(){return "cd-v4-meta-"+dateKey()}
+function loadSlot(slot){
+ const raw=localStorage.getItem(storageKey(slot));
+ return raw?JSON.parse(raw):null;
+}
+function saveSlot(){
+ localStorage.setItem(storageKey(state.slot),JSON.stringify({
+   user:state.user,seconds:state.seconds,mistakes:state.mistakes,completed:state.completed,
+   themeIndex:BANK.indexOf(state.data)
+ }));
+}
+function loadMeta(){return JSON.parse(localStorage.getItem(metaKey())||'{"started":0,"completed":0}')}
+function saveMeta(m){localStorage.setItem(metaKey(),JSON.stringify(m))}
+
+function chooseTheme(slot){
+ const n=dayNumber();
+ let idx=(Math.abs(n*7+11)%BANK.length);
+ if(slot===2) idx=(Math.abs(n*13+5)%BANK.length);
+ if(slot===2 && idx===Math.abs(n*7+11)%BANK.length) idx=(idx+1)%BANK.length;
+ return idx;
+}
+
+function startSlot(slot){
+ const meta=loadMeta();
+ if(slot===2 && meta.completed<1 && !loadSlot(2)){
+   msg("Completa el primer crucigrama para desbloquear el segundo del día.","warn");return;
+ }
+ if(slot>2)return;
+ state.slot=slot;
+ const themeIndex=loadSlot(slot)?.themeIndex ?? chooseTheme(slot);
+ state.data=BANK[themeIndex];
+ const built=build(themeIndex,slot);
+ state.words=built.placed;state.sol=built.g;state.completed=false;
+ const saved=loadSlot(slot);
+ if(saved){
+   state.user=saved.user;state.seconds=saved.seconds||0;state.mistakes=saved.mistakes||0;state.completed=!!saved.completed;
+ }else{
+   state.user=state.sol.map(r=>r.map(x=>x?"":""));
+   state.seconds=0;state.mistakes=0;
+   saveSlot();
+   meta.started=Math.max(meta.started,slot);saveMeta(meta);
+ }
+ state.selected=null;state.dir="across";assignNumbers();render();
+ startTimer();
+}
+
+function assignNumbers(){
+ state.nums={};let n=1;
+ for(let r=0;r<state.sol.length;r++)for(let c=0;c<state.sol[0].length;c++){
+   if(!state.sol[r][c])continue;
+   if((c===0||!state.sol[r][c-1])||(r===0||!state.sol[r-1][c]))state.nums[r+","+c]=n++;
+ }
+ state.words.forEach(w=>w.n=state.nums[w.r+","+w.c]||0);
+}
+
+function render(){
+ const d=new Date();
+ document.getElementById("date").textContent="📅 "+d.toLocaleDateString("es-ES",{day:"numeric",month:"long",year:"numeric"});
+ document.getElementById("theme").textContent=state.data[1]+" "+state.data[0];
+ document.getElementById("slot").textContent="Reto "+state.slot+" / 2";
+ document.getElementById("difficulty").textContent=DIFFICULTIES[(dayNumber()+state.slot)%DIFFICULTIES.length]+" · "+state.words.length+" palabras";
+ document.getElementById("heroTitle").textContent=state.data[1]+" "+state.data[0];
+ document.getElementById("heroMeta").textContent="Reto "+state.slot+" del día · "+state.words.length+" palabras · definiciones temáticas";
+ const hc=document.getElementById("heroCard");hc.style.setProperty("--art",'"'+state.data[1]+'"');hc.style.setProperty("--art2",'"'+state.data[2]+'"');
+ const g=document.getElementById("grid");g.style.gridTemplateColumns=`repeat(${state.sol[0].length},var(--cell))`;g.innerHTML="";
+ for(let r=0;r<state.sol.length;r++)for(let c=0;c<state.sol[0].length;c++){
+   const x=document.createElement("div");x.className="cell";
+   if(!state.sol[r][c]){x.classList.add("black");g.append(x);continue}
+   if(state.nums[r+","+c]){const q=document.createElement("span");q.className="num";q.textContent=state.nums[r+","+c];x.append(q)}
+   const i=document.createElement("input");i.value=state.user[r][c];i.maxLength=1;i.inputMode="text";i.autocapitalize="characters";
+   i.dataset.r=r;i.dataset.c=c;
+   i.onclick=()=>{if(state.selected&&state.selected.r===r&&state.selected.c===c)state.dir=state.dir==="across"?"down":"across";select(r,c)};
+   i.onfocus=()=>select(r,c);
+   i.oninput=()=>{i.value=norm(i.value).slice(0,1);state.user[r][c]=i.value;saveSlot();progress();if(i.value)move(1)};
+   i.onkeydown=handleKey;
+   x.append(i);g.append(x);
+ }
+ renderClues();progress();updateSecond();
+ if(state.selected)highlight();
+}
+
+function renderClues(){
+ for(const d of ["across","down"]){
+   const box=document.getElementById(d);box.innerHTML="";
+   state.words.filter(w=>w.d===d).sort((a,b)=>a.n-b.n).forEach(w=>{
+     const e=document.createElement("div");e.className="clue";
+     e.dataset.n=w.n;e.dataset.d=d;
+     e.innerHTML="<b>"+w.n+".</b>"+w.clue+" <small>"+w.w.length+" letras</small>";
+     e.onclick=()=>{state.dir=d;state.selected={r:w.r,c:w.c};focus(w.r,w.c)};
+     box.append(e);
+   });
+ }
+}
+
+function cells(w){return Array.from({length:w.w.length},(_,i)=>[w.r+(w.d==="down"?i:0),w.c+(w.d==="across"?i:0)])}
+function current(){
+ if(!state.selected)return state.words[0];
+ return state.words.find(w=>w.d===state.dir && cells(w).some(p=>p[0]===state.selected.r&&p[1]===state.selected.c))
+   || state.words.find(w=>cells(w).some(p=>p[0]===state.selected.r&&p[1]===state.selected.c))
+   || state.words[0];
+}
+function select(r,c){state.selected={r,c};highlight()}
+function focus(r,c){const i=document.querySelector(`input[data-r="${r}"][data-c="${c}"]`);if(i){i.focus();highlight()}}
+function highlight(){
+ document.querySelectorAll(".cell").forEach(x=>x.classList.remove("active","focus"));
+ if(!state.selected)return;
+ const w=current();cells(w).forEach(([r,c])=>document.querySelector(`input[data-r="${r}"][data-c="${c}"]`)?.parentElement.classList.add("active"));
+ document.querySelector(`input[data-r="${state.selected.r}"][data-c="${state.selected.c}"]`)?.parentElement.classList.add("focus");
+ document.querySelectorAll(".clue").forEach(e=>e.classList.toggle("selected",+e.dataset.n===w.n&&e.dataset.d===w.d));
+}
+function move(step){
+ const w=current(),cs=cells(w),i=cs.findIndex(p=>p[0]===state.selected.r&&p[1]===state.selected.c),j=i+step;
+ if(j>=0&&j<cs.length){state.selected={r:cs[j][0],c:cs[j][1]};focus(cs[j][0],cs[j][1])}
+}
+function handleKey(e){
+ if(e.key==="Backspace"){if(this.value){this.value="";state.user[+this.dataset.r][+this.dataset.c]="";saveSlot();progress();e.preventDefault()}else{move(-1);e.preventDefault()}}
+ else if(e.key==="ArrowRight"){state.dir="across";move(1);e.preventDefault()}
+ else if(e.key==="ArrowLeft"){state.dir="across";move(-1);e.preventDefault()}
+ else if(e.key==="ArrowDown"){state.dir="down";move(1);e.preventDefault()}
+ else if(e.key==="ArrowUp"){state.dir="down";move(-1);e.preventDefault()}
+ else if(e.key===" "){state.dir=state.dir==="across"?"down":"across";highlight();e.preventDefault()}
+}
+function progress(){
+ let total=0,filled=0;state.sol.forEach((r,a)=>r.forEach((x,c)=>{if(x){total++;if(state.user[a][c])filled++}}));
+ document.getElementById("score").textContent=filled+" / "+total;
+ document.getElementById("bar").style.width=(filled/total*100)+"%";
+ document.getElementById("mistakes").textContent="Errores: "+state.mistakes;
+ if(filled===total && !state.completed)checkGrid(true);
+}
+function markCells(w,kind){
+ cells(w).forEach(([r,c])=>{const e=document.querySelector(`input[data-r="${r}"][data-c="${c}"]`)?.parentElement;if(e){e.classList.remove("wrong","correct");if(kind)e.classList.add(kind)}});
+}
+function checkWord(){
+ const w=current();let bad=0;
+ cells(w).forEach(([r,c])=>{if(state.user[r][c]&&state.user[r][c]!==state.sol[r][c])bad++});
+ markCells(w,bad?"wrong":"correct");
+ if(bad){state.mistakes++;saveSlot();msg("✗ Hay letras incorrectas en esta palabra.","bad")}else msg("✓ La palabra no tiene errores en las letras que has escrito.","good");
+}
+function checkGrid(silent=false){
+ let bad=0,empty=0;
+ state.sol.forEach((r,a)=>r.forEach((x,c)=>{if(!x)return;const e=document.querySelector(`input[data-r="${a}"][data-c="${c}"]`)?.parentElement;e?.classList.remove("wrong","correct");
+   if(!state.user[a][c])empty++;else if(state.user[a][c]!==x){bad++;e?.classList.add("wrong")}else e?.classList.add("correct");
+ }));
+ if(!bad&&!empty){
+   state.completed=true;const m=loadMeta();m.completed=Math.max(m.completed,state.slot);saveMeta(m);saveSlot();
+   msg("🎉 ¡Crucigrama completado!","good");updateSecond();
+ }else if(!silent){msg(`Revisión: ${bad} incorrectas y ${empty} vacías.`,"warn")}
+}
+function revealWord(){
+ const w=current();cells(w).forEach(([r,c])=>{state.user[r][c]=state.sol[r][c]});
+ saveSlot();render();msg("💡 Palabra revelada.","warn");
+}
+function revealLetter(){
+ const w=current(),cs=cells(w);
+ const empty=cs.find(([r,c])=>!state.user[r][c]);
+ if(!empty){msg("Esta palabra ya está completa.","good");return}
+ state.user[empty[0]][empty[1]]=state.sol[empty[0]][empty[1]];
+ saveSlot();render();focus(empty[0],empty[1]);msg("🔎 Letra revelada.","warn");
+}
+function revealGrid(){
+ state.sol.forEach((r,a)=>r.forEach((x,c)=>{if(x)state.user[a][c]=x}));
+ saveSlot();render();checkGrid(true);msg("🔓 Cuadrícula revelada.","warn");
+}
+function clearWord(){const w=current();cells(w).forEach(([r,c])=>state.user[r][c]="");saveSlot();render();focus(w.r,w.c);msg("↺ Palabra borrada.","warn")}
+function msg(t,kind=""){const e=document.getElementById("msg");e.textContent=t;e.className="msg "+kind}
+function updateSecond(){
+ const m=loadMeta(),b=document.getElementById("secondBtn"),info=document.getElementById("secondInfo");
+ if(state.slot===1){
+   if(m.completed>=1){
+     b.disabled=false;b.textContent="🎲 Ir al segundo crucigrama";
+     const secondTheme=BANK[chooseTheme(2)];
+     info.innerHTML="<b>Segundo reto desbloqueado</b> "+secondTheme[1]+" "+secondTheme[0]+" · diferente al primero.";
+   }else{
+     b.disabled=true;b.textContent="🔒 Segundo crucigrama";
+     info.innerHTML="<b>Cuando termines este...</b> se desbloquea un segundo crucigrama de otro tema. Máximo 2 al día.";
+   }
+ }else{
+   b.disabled=false;b.textContent="↩ Volver al primero";
+   info.innerHTML="<b>Segundo reto del día</b> Ya estás en el segundo. Mañana tendrás dos nuevos.";
+ }
+}
+function startTimer(){
+ clearInterval(state.timer);
+ state.timer=setInterval(()=>{if(!state.completed){state.seconds++;saveSlot();document.getElementById("timer").textContent="⏱ "+fmt(state.seconds)}},1000);
+ document.getElementById("timer").textContent="⏱ "+fmt(state.seconds);
+}
+function fmt(s){return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")}
+
+document.getElementById("checkGrid").onclick=()=>checkGrid(false);
+document.getElementById("revealWord").onclick=revealWord;
+document.getElementById("checkWord").onclick=checkWord;
+document.getElementById("revealGrid").onclick=revealGrid;
+document.getElementById("revealLetter").onclick=revealLetter;
+document.getElementById("clearWord").onclick=clearWord;
+document.getElementById("secondBtn").onclick=()=>startSlot(state.slot===1?2:1);
+document.getElementById("newThemeBtn").onclick=()=>msg("🎨 Tema: "+state.data[0]+" · "+state.words.length+" palabras. El tema cambia automáticamente cada día.","good");
+
+// Primer arranque.
+startSlot(1);
+</script>
+</body>
+</html>
